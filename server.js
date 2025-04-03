@@ -17,9 +17,10 @@ const db = mysql.createConnection ({
 });
 
 db.connect((err) => {
-    if(err) {
+    if (err) {
         console.error("Error connecting to the database", err);
-    }   else {
+        process.exit(1);
+    } else {
         console.log("Connected to MySQL database.");
     }
 });
@@ -98,5 +99,5 @@ app.post("/save-cards", authenticateJWT, (req, res) => {
     });
 });
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
