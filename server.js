@@ -9,20 +9,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection ({
+
+const pool = mysql.createPool({
+    connectionLimit: 10,
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
-});
-
-db.connect((err) => {
-    if (err) {
-        console.error("Error connecting to the database", err);
-        process.exit(1);
-    } else {
-        console.log("Connected to MySQL database.");
-    }
 });
 
 const authenticateJWT = (req, res, next) => {
@@ -45,7 +38,7 @@ app.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    db.query(
+    pool.query(
         "INSERT INTO users (username, password_hash) VALUES (?, ?)",
         [username, hashedPassword],
         (err, result) => {
@@ -60,7 +53,7 @@ app.post("/signup", async (req, res) => {
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
-    db.query(
+    pool.query(
         "SELECT * FROM users WHERE username = ?",
         [username],
         async (err, results) => {
@@ -89,7 +82,7 @@ app.post("/save-cards", authenticateJWT, (req, res) => {
 
     const query = "INSERT INTO cards (user_id, card1, card2, suited, turn1, turn2, turn3, turn4, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const date = new Date();
-    db.query(query, [user_id, Card1, Card2, suited, turn1, turn2, turn3, turn4, date], (err, result) => {
+    pool.query(query, [user_id, Card1, Card2, suited, turn1, turn2, turn3, turn4, date], (err, result) => {
         if(err) {
             console.error("Error saving cards:", err);
             return res.status(500).json({ message: "Error saving cards" });
