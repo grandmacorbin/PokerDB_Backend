@@ -18,6 +18,14 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
 });
 
+pool.getConnection((err, connection) => {
+    if (err) {
+        console.error('Database connection failed:', err);
+        return res.status(500).json({ message: 'Database connection error' });
+    }
+    connection.release();
+});
+
 const authenticateJWT = (req, res, next) => {
     const token = req.headers["Authorization"]?.split(" ")[1] || req.headers["authorization"]?.split(" ")[1];
     if(!token) {
