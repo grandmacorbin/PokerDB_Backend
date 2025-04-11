@@ -41,6 +41,8 @@ const authenticateJWT = (req, res, next) => {
 };
 module.exports= authenticateJWT;
 
+app.use(`/public`, express.static('public'));
+
 app.post("/signup", async (req, res) => {
     const { username, password } = req.body;
 
@@ -90,13 +92,24 @@ app.post("/save-cards", authenticateJWT, (req, res) => {
 
     const query = "INSERT INTO cards (user_id, card1, card2, suited, turn1, turn2, turn3, turn4, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     const date = new Date();
-    pool.query(query, [user_id, Card1, Card2, suited, turn1, turn2, turn3, turn4, date], (err, result) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hour = String(date.getHours()).padStart(2, '0');
+    const minute = String(date.getMinutes()).padStart(2, '0');
+    const second = String(date.getSeconds()).padStart(2, '0');
+    const FullDate = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    console.log(FullDate)
+    pool.query(query, [user_id, Card1, Card2, suited, turn1, turn2, turn3, turn4, FullDate], (err, result) => {
         if(err) {
             console.error("Error saving cards:", err);
             return res.status(500).json({ message: "Error saving cards" });
         }
+        const jwt_secret = process.env.JWT_SECRET || "default-secret-key";
+        const newToken = jwt.sign({ id: req.user.id, username: req.user.username }, jwt_secret, { expiresIn: "1h" });
 
-        res.json({ message: "Cards saved successfully"});
+        res.json({ message: "Cards saved successfully", token: newToken});
+
     });
 });
 
